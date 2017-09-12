@@ -1,0 +1,87 @@
+<!doctype html>
+<html class="no-js">
+<head>
+    <meta charset="utf-8">
+    <title>metronome</title>
+    <meta name="description" content="">
+    <meta name="author" content="Fredrik Olofsson">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+    <canvas id="canvas" width="320" height="240"></canvas>
+
+    <script src="/rhizome/rhizome.js"></script>
+    <script>
+    (function() {
+        // Window dimensions, ref :
+        // http://stackoverflow.com/questions/3437786/get-the-size-of-the-screen-current-web-page-and-browser-window
+        var w = window, d = document, e = d.documentElement, g = d.getElementsByTagName('body')[0]
+        , winWidth = w.innerWidth || e.clientWidth || g.clientWidth
+        , winHeight = w.innerHeight|| e.clientHeight|| g.clientHeight
+        , fontSize = winWidth * 0.05
+
+        var can = document.getElementById('canvas')
+        can.setAttribute('width', winWidth)
+        can.setAttribute('height', winHeight)
+        var ctx = can.getContext('2d')
+        ctx.font = ''+fontSize+'px sans-serif'
+        ctx.lineWidth = 5;
+        ctx.fillStyle = 'white';
+        ctx.fillText('multi-touch demo', winWidth*0.33, winHeight*0.45);
+
+        var client = new rhizome.Client()
+        client.start(function(err) {
+            if (err) throw err
+            console.log('multi-touch started with id: '+client.id);
+
+            var touches = [], render = false;
+            can.addEventListener('touchstart', function(event) {
+                touches = event.touches;
+                render = true;
+            }, false);
+            can.addEventListener('touchmove', function(event) {
+                event.preventDefault();
+                touches = event.touches;
+                render = true;
+            }, false);
+            can.addEventListener('touchend', function(event) {
+                touches = event.touches;
+                render = true;
+            }, false);
+
+            function rgbStrFromChars(r, g, b) {
+                return "rgb("+(r*25%256)+","+(g*25%256)+","+(b*25%256)+")";
+            }
+            setInterval(function() {
+                if(render) {  //only render and send if something changed
+                    ctx.clearRect(0, 0, winWidth, winHeight);
+                    var oscdata = [client.id];
+                    var bgCol = rgbStrFromChars(client.id.charCodeAt(0), client.id.charCodeAt(1), client.id.charCodeAt(2));
+                    var fgCol = rgbStrFromChars(client.id.charCodeAt(3), client.id.charCodeAt(4), client.id.charCodeAt(5));
+                    for(var i = 0; i<touches.length; i++) {
+                        var x = touches[i].pageX;
+                        var y = touches[i].pageY;
+                        ctx.beginPath();
+                        ctx.fillStyle = bgCol;
+                        ctx.strokeStyle = fgCol;
+                        ctx.arc(x, y, 40, 0, 2*Math.PI, true);
+                        ctx.fill();
+                        ctx.stroke();
+                        ctx.fillStyle = 'white';
+                        ctx.fillText(''+i+': '+x+','+y, winWidth*0.12, winHeight*0.1+(i*winHeight*0.06));
+                        oscdata.push(x/winWidth, y/winHeight);
+                    }
+                    client.send('/touches', oscdata);
+                    render = false;
+                }
+            }, 16.667);  //60fps
+        })
+        client.on('connected', function() { console.log('multi-touch connected') })
+    })();
+
+    </script>
+</body>
+</html>
