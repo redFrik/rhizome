@@ -116,7 +116,7 @@ The following messages are used for communication between one connection and the
 
 #### From Both
 
-  - `/sys/connections/sendlist <clientType>` : sends the list of ids of all connections of `<clientType>` currently opened on the server. The response is sent at address `/sys/connections/<clientType>`
+  - `/sys/connections/sendlist <appPort> <clientType>` : sends the list of ids of all connections of `<clientType>` currently opened on the server. `<clientType>` can be `websockets` or `osc`. The response is sent at address `/sys/connections/<clientType>`.
 
 ### Broadcast messages
 
